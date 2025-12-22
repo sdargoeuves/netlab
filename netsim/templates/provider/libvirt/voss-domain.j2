@@ -1,0 +1,65 @@
+    {{ name }}.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
+    {{ name }}.ssh.insert_key = false
+    {{ name }}.ssh.username = "rwa"
+    {{ name }}.vm.boot_timeout = 300
+    {{ name }}.vm.guest = :freebsd
+    {{ name }}.ssh.shell = "show sys-info"
+
+
+    {{ name }}.trigger.before :up do |trigger|
+      trigger.info = "Adding temporary DHCP reservation... ip: {{ n.mgmt.ipv4 }} | mac: {{ n.mgmt.mac }}"
+      trigger.run = {inline: "virsh net-update {{ addressing.mgmt._network }} add ip-dhcp-host \"<host id='01:ca:fe:00:01:00:00' ip='10.194.57.11'/>\" --live --config || true"}
+    end
+
+    {{ name }}.trigger.after :up do |trigger|
+      trigger.info = "Cleaning up DHCP reservation... ip: {{ n.mgmt.ipv4 }} | mac: {{ n.mgmt.mac }}"
+      trigger.run = {inline: "virsh net-update {{ addressing.mgmt._network }} delete ip-dhcp-host \"<host id='01:ca:fe:00:01:00:00' ip='10.194.57.11'/>\" --live --config || true"}
+    end
+
+    {# {{ name }}.trigger.before :up do |trigger|
+      trigger.info = "Adding temporary DHCP reservation... ip: {{ n.mgmt.ipv4 }} | mac: {{ n.mgmt.mac }}"
+      trigger.run = {inline: "virsh net-update {{ addressing.mgmt._network }} add ip-dhcp-host \"<host id='01:{{ n.mgmt.mac }}' ip='{{ n.mgmt.ipv4 }}'/>\" --live --config || true"}
+    end
+
+    {{ name }}.trigger.after :up do |trigger|
+      trigger.info = "Cleaning up DHCP reservation... ip: {{ n.mgmt.ipv4 }} | mac: {{ n.mgmt.mac }}"
+      trigger.run = {inline: "virsh net-update {{ addressing.mgmt._network }} delete ip-dhcp-host \"<host id='01:{{ n.mgmt.mac }}' ip='{{ n.mgmt.ipv4 }}'/>\" --live --config || true"}
+    end #}
+
+
+
+{# {% if n.mgmt is defined and n.mgmt.mac is defined %}
+    {{ name }}.vm.provider :libvirt do |domain|
+      {% set mac_parts = n.mgmt.mac.split(':') %}
+      {% set last_octet = mac_parts[-1] | int(base=16) %}
+      {% set new_octet = '%02x' | format(last_octet + 0x81) %}
+      {% set new_mac = mac_parts[:-1] | join(':') + ':' + new_octet %}
+      domain.management_network_mac = "{{ new_mac }}"
+      domain.qemu_use_session = false
+    end
+{% endif %} #}
+
+{# WE USE :81 at the end for the mgmt interface #}
+
+{# {% if n.mgmt is defined and n.mgmt.mac is defined %}
+    {{ name }}.vm.provider :libvirt do |domain|
+      {% set mac_parts = n.mgmt.mac.split(':') %}
+      {% set new_mac = mac_parts[:-1] | join(':') + ':81' %}
+      domain.management_network_mac = "{{ new_mac }}"
+      domain.qemu_use_session = false
+    end
+{% endif %} #}
+
+{# maybe we need to fix the MAC: be:36:3b:91:c9:e8 #}
+{# another boot the mac was:     52:54:00:d3:a4:81 #}
+
+    {{ name }}.vm.provider :libvirt do |domain|
+      domain.cpus = 1
+      domain.memory = 2048
+      domain.driver = "kvm"
+      domain.disk_bus = "ide"
+      domain.disk_device = "hda"
+      {# domain.wait_for_ip = false #}
+      {# domain.nic_model_type = "e1000" #}
+    end
+

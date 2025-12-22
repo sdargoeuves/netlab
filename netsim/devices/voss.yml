@@ -1,0 +1,38 @@
+---
+description: Extreme VOSS
+support:
+  level: minimal
+  caveats:
+  - We don't test Extreme VOSS configurations.
+interface_name: "GigabitEthernet 1/{ifindex}"
+loopback_interface_name: "loopback {ifindex}"
+mtu: 1500
+libvirt:
+  image: extreme/voss
+  build: https://netlab.tools/labs/voss/
+  create:
+    virt-install --connect=qemu:///system --name=vm_box --arch=x86_64 --cpu host --vcpus=1 --hvm
+      --ram=2048 --network=network:vagrant-libvirt,model=virtio --graphics none --import
+      --disk path=vm.qcow2,format=qcow2,bus=ide
+clab:
+  image: vrnetlab/exos...
+  node:
+    kind: extreme_voss
+#  interface.name: eth{ifindex}
+  build: https://containerlab.dev/manual/kinds/cisco_asav/
+group_vars:
+  ansible_user: rwa
+  ansible_password: rwa
+  ansible_ssh_pass: rwa
+  ansible_network_os: voss
+  ansible_connection: network_cli
+  mgmt_if: "mgmt" #"mgmtEthernet mgmt"
+  netlab_console_connection: ssh
+external:
+  image: none
+features:
+  ospf:
+    password: true
+    priority: true
+    timers: true
+graphite.icon: switch
