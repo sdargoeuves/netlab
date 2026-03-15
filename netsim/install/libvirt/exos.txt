@@ -15,7 +15,7 @@ Answers the never-ending list of setup questions:
 * Enable SNMPv2: no
 * Enable SNMPv3: no
 * Turn off unconfigured ports by default: yes
-* Failsave username/password: no
+* Failsafe username/password: no
 
 When you get to the end of the list, you can see the CLI commands you just
 generated and a list of generally useful commands. After that, you'll eventually

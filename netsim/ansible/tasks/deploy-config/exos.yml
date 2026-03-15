@@ -1,0 +1,23 @@
+# - block:
+
+- name: "exos_config: deploying {{ netsim_action }} from {{ config_template }}"
+  community.network.exos_config:
+    src: "{{ config_template }}"
+  ignore_errors: true
+  tags: [ print_action, always ]
+
+  # rescue:
+  # - name: "EXOS CLI: deploying {{ netsim_action }} from {{ config_template }}"
+  #   delegate_to: localhost
+  #   ansible.builtin.expect:
+  #     command: >-
+  #       sshpass -p '{{ ansible_ssh_pass }}'
+  #       ssh -o UserKnownHostsFile=/dev/null
+  #           -o StrictHostKeyChecking=no
+  #           -o KexAlgorithms=+diffie-hellman-group-exchange-sha1
+  #           -o PubkeyAcceptedKeyTypes=ssh-rsa
+  #           -o HostKeyAlgorithms=+ssh-rsa
+  #           {{ ansible_user }}@{{ ansible_host }}
+  #     responses:
+  #       '.*#': "{{ lookup('template', config_template) }}\nsave configuration\nexit\n"
+  #   tags: [ print_action, always ]
