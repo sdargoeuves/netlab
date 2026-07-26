@@ -1,0 +1,34 @@
+{% if n.mgmt is defined and n.mgmt.mac is defined %}
+($voss_shifted_macs ||= []) << "{{ n.mgmt.mac | lower }}"
+
+    {{ name }}.vm.provider :libvirt do |domain|
+      domain.management_network_mac = "{{ n.mgmt.mac }}"
+    end
+
+    {% set mac_parts = n.mgmt.mac.split(':') %}
+    {% set last_octet = mac_parts[-1] | int(base=16) %}
+    {% set shifted_octet = '%02x' | format((last_octet + 0x81) % 256) %}
+    {% set shifted_mac = mac_parts[:-1] | join(':') + ':' + shifted_octet %}
+
+    {{ name }}.trigger.before :up do |trigger|
+      trigger.run = {inline: "virsh net-update {{ addressing.mgmt._network }} delete ip-dhcp-host \"<host mac='{{ shifted_mac }}' ip='{{ n.mgmt.ipv4 }}'/>\" --live --config 2>/dev/null; virsh net-update {{ addressing.mgmt._network }} add-last ip-dhcp-host \"<host mac='{{ shifted_mac }}' ip='{{ n.mgmt.ipv4 }}'/>\" --live --config || true"}
+    end
+{% endif %}
+
+    {{ name }}.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
+    {{ name }}.ssh.insert_key = false
+    {{ name }}.vm.boot_timeout = 300
+    {{ name }}.vm.guest = :freebsd
+    {{ name }}.ssh.username = "rwa"
+    {{ name }}.ssh.password = "rwa"
+    {{ name }}.ssh.shell = "show sys-info"
+
+    {{ name }}.vm.provider :libvirt do |domain|
+      domain.nic_adapter_count = 33
+      domain.memory = 2048
+      domain.cpus = 1
+      domain.driver = "kvm"
+      domain.disk_bus = "ide"
+      domain.disk_device = "hda"
+      domain.nic_model_type = "e1000"
+    end
